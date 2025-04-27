@@ -1,8 +1,8 @@
 import sys
 from pathlib import Path
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout,
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout,
                            QHBoxLayout, QFileDialog, QLabel, QWidget, QProgressBar)
-from PyQt6.QtCore import Qt
+from PyQt5.QtCore import Qt
 from compressor import Compressor
 
 class CompressionGUI(QMainWindow):
