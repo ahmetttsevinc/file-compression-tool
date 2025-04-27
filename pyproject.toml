@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "file-compression-tool"
 version = "0.1.0"
 authors = [
-    { name="Ahmet Sevinç", email="example@example.com" },
+    { name="Ahmet Sevinç", email="ahmet.sevinc@bahcesehir.edu.tr" },
 ]
 description = "A file compression tool with PyQt5 GUI"
 readme = "README.md"
