@@ -1,97 +1,95 @@
 import os
 import gzip
 import shutil
-from typing import Union, List
+from typing import Union, List, Set
 from pathlib import Path
 
-class Compressor:
-    """Main class for handling file compression and decompression operations."""
+class FileProcessor:
+    """Core class for handling file operations."""
     
     def __init__(self):
-        self.supported_extensions = ['.txt', '.csv', '.json', '.xml', '.log']
+        self.allowed_formats: Set[str] = {'.txt', '.csv', '.json', '.xml', '.log'}
     
-    def compress_file(self, file_path: Union[str, Path]) -> str:
+    def pack_single(self, source_path: Union[str, Path]) -> str:
         """
-        Compress a single file using gzip compression.
+        Pack a single file using gzip algorithm.
         
         Args:
-            file_path: Path to the file to be compressed
+            source_path: Location of the file to be packed
             
         Returns:
-            str: Path to the compressed file
+            str: Location of the packed file
             
         Raises:
-            FileNotFoundError: If the input file doesn't exist
-            ValueError: If the file type is not supported
+            FileNotFoundError: If source file is missing
+            ValueError: If file format is not supported
         """
-        file_path = Path(file_path)
-        if not file_path.exists():
-            raise FileNotFoundError(f"File not found: {file_path}")
+        input_path = Path(source_path)
+        if not input_path.exists():
+            raise FileNotFoundError(f"Unable to locate file: {input_path}")
             
-        if file_path.suffix not in self.supported_extensions:
-            raise ValueError(f"Unsupported file type: {file_path.suffix}")
+        if input_path.suffix not in self.allowed_formats:
+            raise ValueError(f"Format not supported: {input_path.suffix}")
             
-        output_path = str(file_path) + '.gz'
+        result_path = str(input_path) + '.gz'
         
-        with open(file_path, 'rb') as f_in:
-            with gzip.open(output_path, 'wb') as f_out:
-                shutil.copyfileobj(f_in, f_out)
+        with open(input_path, 'rb') as source, gzip.open(result_path, 'wb') as target:
+            shutil.copyfileobj(source, target)
                 
-        return output_path
+        return result_path
     
-    def decompress_file(self, file_path: Union[str, Path]) -> str:
+    def unpack_single(self, source_path: Union[str, Path]) -> str:
         """
-        Decompress a gzip compressed file.
+        Unpack a gzip packed file.
         
         Args:
-            file_path: Path to the compressed file
+            source_path: Location of the packed file
             
         Returns:
-            str: Path to the decompressed file
+            str: Location of the unpacked file
             
         Raises:
-            FileNotFoundError: If the input file doesn't exist
-            ValueError: If the file is not a gzip file
+            FileNotFoundError: If source file is missing
+            ValueError: If not a gzip file
         """
-        file_path = Path(file_path)
-        if not file_path.exists():
-            raise FileNotFoundError(f"File not found: {file_path}")
+        input_path = Path(source_path)
+        if not input_path.exists():
+            raise FileNotFoundError(f"Unable to locate file: {input_path}")
             
-        if not str(file_path).endswith('.gz'):
-            raise ValueError("File must be a gzip file (.gz extension)")
+        if not str(input_path).endswith('.gz'):
+            raise ValueError("File must be in gzip format (.gz)")
             
-        output_path = str(file_path)[:-3]  # Remove .gz extension
+        result_path = str(input_path)[:-3]
         
-        with gzip.open(file_path, 'rb') as f_in:
-            with open(output_path, 'wb') as f_out:
-                shutil.copyfileobj(f_in, f_out)
+        with gzip.open(input_path, 'rb') as source, open(result_path, 'wb') as target:
+            shutil.copyfileobj(source, target)
                 
-        return output_path
+        return result_path
     
-    def compress_directory(self, dir_path: Union[str, Path]) -> List[str]:
+    def pack_folder(self, source_path: Union[str, Path]) -> List[str]:
         """
-        Compress all supported files in a directory.
+        Pack all supported files in a folder.
         
         Args:
-            dir_path: Path to the directory
+            source_path: Location of the folder
             
         Returns:
-            List[str]: List of paths to compressed files
+            List[str]: Locations of packed files
             
         Raises:
-            NotADirectoryError: If the input path is not a directory
+            NotADirectoryError: If source is not a folder
         """
-        dir_path = Path(dir_path)
-        if not dir_path.is_dir():
-            raise NotADirectoryError(f"Not a directory: {dir_path}")
+        input_path = Path(source_path)
+        if not input_path.is_dir():
+            raise NotADirectoryError(f"Not a valid folder: {input_path}")
             
-        compressed_files = []
-        for file_path in dir_path.rglob('*'):
-            if file_path.is_file() and file_path.suffix in self.supported_extensions:
+        processed_files = []
+        for file_path in input_path.rglob('*'):
+            if file_path.is_file() and file_path.suffix in self.allowed_formats:
                 try:
-                    compressed_file = self.compress_file(file_path)
-                    compressed_files.append(compressed_file)
+                    packed_file = self.pack_single(file_path)
+                    processed_files.append(packed_file)
                 except Exception as e:
-                    print(f"Error compressing {file_path}: {str(e)}")
+                    print(f"Error processing {file_path}: {str(e)}")
                     
-        return compressed_files 
+        return processed_files 

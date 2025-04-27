@@ -1,85 +1,85 @@
 import os
 import pytest
 from pathlib import Path
-from compression.compressor import Compressor
+from compression.compressor import FileProcessor
 
 @pytest.fixture
-def compressor():
-    return Compressor()
+def processor():
+    return FileProcessor()
 
 @pytest.fixture
-def test_file(tmp_path):
-    file_path = tmp_path / "test.txt"
+def sample_file(tmp_path):
+    file_path = tmp_path / "sample.txt"
     with open(file_path, "w") as f:
-        f.write("Test content for compression")
+        f.write("Sample content for processing")
     return file_path
 
 @pytest.fixture
-def test_dir(tmp_path):
-    # Create test directory with multiple files
-    dir_path = tmp_path / "test_dir"
-    dir_path.mkdir()
+def sample_folder(tmp_path):
+    # Prepare test folder with various files
+    folder_path = tmp_path / "sample_folder"
+    folder_path.mkdir()
     
-    # Create test files with different extensions
-    files = [
-        ("test1.txt", "Content 1"),
-        ("test2.csv", "Content 2"),
-        ("test3.json", "Content 3"),
-        ("test4.exe", "Content 4"),  # Unsupported extension
+    # Create files with different formats
+    test_files = [
+        ("doc1.txt", "Content A"),
+        ("data1.csv", "Content B"),
+        ("config1.json", "Content C"),
+        ("binary1.exe", "Content D"),  # Unsupported format
     ]
     
-    for filename, content in files:
-        with open(dir_path / filename, "w") as f:
+    for filename, content in test_files:
+        with open(folder_path / filename, "w") as f:
             f.write(content)
             
-    return dir_path
+    return folder_path
 
-def test_compress_file(compressor, test_file):
-    """Test single file compression."""
-    compressed_path = compressor.compress_file(test_file)
-    assert os.path.exists(compressed_path)
-    assert compressed_path.endswith('.gz')
+def test_pack_single(processor, sample_file):
+    """Verify single file packing."""
+    result_path = processor.pack_single(sample_file)
+    assert os.path.exists(result_path)
+    assert result_path.endswith('.gz')
 
-def test_decompress_file(compressor, test_file):
-    """Test file decompression."""
-    # First compress the file
-    compressed_path = compressor.compress_file(test_file)
+def test_unpack_single(processor, sample_file):
+    """Verify file unpacking."""
+    # First pack the file
+    packed_path = processor.pack_single(sample_file)
     
-    # Then decompress it
-    decompressed_path = compressor.decompress_file(compressed_path)
-    assert os.path.exists(decompressed_path)
+    # Then unpack it
+    result_path = processor.unpack_single(packed_path)
+    assert os.path.exists(result_path)
     
-    # Check if content matches
-    with open(test_file) as f1, open(decompressed_path) as f2:
+    # Verify content integrity
+    with open(sample_file) as f1, open(result_path) as f2:
         assert f1.read() == f2.read()
 
-def test_compress_directory(compressor, test_dir):
-    """Test directory compression."""
-    compressed_files = compressor.compress_directory(test_dir)
+def test_pack_folder(processor, sample_folder):
+    """Verify folder processing."""
+    result_files = processor.pack_folder(sample_folder)
     
-    # Should compress only supported files
-    assert len(compressed_files) == 3  # .txt, .csv, .json files
+    # Should process only supported formats
+    assert len(result_files) == 3  # txt, csv, json files
     
-    # Check if all compressed files exist
-    for compressed_file in compressed_files:
-        assert os.path.exists(compressed_file)
-        assert compressed_file.endswith('.gz')
+    # Verify all processed files
+    for result_file in result_files:
+        assert os.path.exists(result_file)
+        assert result_file.endswith('.gz')
 
-def test_unsupported_file_type(compressor, tmp_path):
-    """Test compression of unsupported file type."""
-    unsupported_file = tmp_path / "test.exe"
-    with open(unsupported_file, "w") as f:
+def test_invalid_format(processor, tmp_path):
+    """Verify handling of invalid format."""
+    invalid_file = tmp_path / "test.exe"
+    with open(invalid_file, "w") as f:
         f.write("Test content")
         
     with pytest.raises(ValueError):
-        compressor.compress_file(unsupported_file)
+        processor.pack_single(invalid_file)
 
-def test_nonexistent_file(compressor):
-    """Test compression of non-existent file."""
+def test_missing_file(processor):
+    """Verify handling of missing file."""
     with pytest.raises(FileNotFoundError):
-        compressor.compress_file("nonexistent.txt")
+        processor.pack_single("nonexistent.txt")
 
-def test_nonexistent_directory(compressor):
-    """Test compression of non-existent directory."""
+def test_missing_folder(processor):
+    """Verify handling of missing folder."""
     with pytest.raises(NotADirectoryError):
-        compressor.compress_directory("nonexistent_dir") 
+        processor.pack_folder("nonexistent_folder") 

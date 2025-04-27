@@ -1,11 +1,11 @@
 import sys
 from PyQt5.QtWidgets import QApplication
-from gui import CompressionGUI
+from compression.gui import ProcessorInterface
 
 def main():
-    """Main entry point of the application."""
+    """Application entry point."""
     app = QApplication(sys.argv)
-    window = CompressionGUI()
+    window = ProcessorInterface()
     window.show()
     sys.exit(app.exec_())
 

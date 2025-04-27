@@ -3,93 +3,93 @@ from pathlib import Path
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout,
                            QHBoxLayout, QFileDialog, QLabel, QWidget, QProgressBar)
 from PyQt5.QtCore import Qt
-from compressor import Compressor
+from compression.compressor import FileProcessor
 
-class CompressionGUI(QMainWindow):
+class ProcessorInterface(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.compressor = Compressor()
-        self.init_ui()
+        self.processor = FileProcessor()
+        self.setup_interface()
         
-    def init_ui(self):
-        """Initialize the user interface."""
-        self.setWindowTitle('File Compression Tool')
+    def setup_interface(self):
+        """Configure the user interface."""
+        self.setWindowTitle('File Processing Tool')
         self.setGeometry(100, 100, 600, 400)
         
-        # Create central widget and layout
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        layout = QVBoxLayout(central_widget)
+        # Setup main container
+        main_container = QWidget()
+        self.setCentralWidget(main_container)
+        main_layout = QVBoxLayout(main_container)
         
-        # Create widgets
-        self.status_label = QLabel('Select a file or directory to compress/decompress')
-        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # Setup display elements
+        self.info_display = QLabel('Select files or folders for processing')
+        self.info_display.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        # Create buttons
-        compress_file_btn = QPushButton('Compress File')
-        decompress_file_btn = QPushButton('Decompress File')
-        compress_dir_btn = QPushButton('Compress Directory')
+        # Setup action buttons
+        pack_btn = QPushButton('Pack File')
+        unpack_btn = QPushButton('Unpack File')
+        folder_btn = QPushButton('Process Folder')
         
-        # Create progress bar
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setVisible(False)
+        # Setup progress indicator
+        self.progress_indicator = QProgressBar()
+        self.progress_indicator.setVisible(False)
         
-        # Add widgets to layout
-        layout.addWidget(self.status_label)
-        layout.addWidget(compress_file_btn)
-        layout.addWidget(decompress_file_btn)
-        layout.addWidget(compress_dir_btn)
-        layout.addWidget(self.progress_bar)
+        # Arrange elements
+        main_layout.addWidget(self.info_display)
+        main_layout.addWidget(pack_btn)
+        main_layout.addWidget(unpack_btn)
+        main_layout.addWidget(folder_btn)
+        main_layout.addWidget(self.progress_indicator)
         
-        # Connect buttons to functions
-        compress_file_btn.clicked.connect(self.compress_file)
-        decompress_file_btn.clicked.connect(self.decompress_file)
-        compress_dir_btn.clicked.connect(self.compress_directory)
+        # Connect actions
+        pack_btn.clicked.connect(self.handle_pack)
+        unpack_btn.clicked.connect(self.handle_unpack)
+        folder_btn.clicked.connect(self.handle_folder)
         
-    def compress_file(self):
-        """Handle file compression."""
-        file_path, _ = QFileDialog.getOpenFileName(
+    def handle_pack(self):
+        """Process pack file request."""
+        source_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Select File to Compress",
+            "Choose File to Pack",
             "",
-            f"Supported Files ({' '.join('*' + ext for ext in self.compressor.supported_extensions)})"
+            f"Supported Formats ({' '.join('*' + ext for ext in self.processor.allowed_formats)})"
         )
         
-        if file_path:
+        if source_path:
             try:
-                compressed_path = self.compressor.compress_file(file_path)
-                self.status_label.setText(f'Successfully compressed: {compressed_path}')
+                result_path = self.processor.pack_single(source_path)
+                self.info_display.setText(f'Successfully packed: {result_path}')
             except Exception as e:
-                self.status_label.setText(f'Error: {str(e)}')
+                self.info_display.setText(f'Error: {str(e)}')
                 
-    def decompress_file(self):
-        """Handle file decompression."""
-        file_path, _ = QFileDialog.getOpenFileName(
+    def handle_unpack(self):
+        """Process unpack file request."""
+        source_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Select File to Decompress",
+            "Choose File to Unpack",
             "",
-            "Compressed Files (*.gz)"
+            "Packed Files (*.gz)"
         )
         
-        if file_path:
+        if source_path:
             try:
-                decompressed_path = self.compressor.decompress_file(file_path)
-                self.status_label.setText(f'Successfully decompressed: {decompressed_path}')
+                result_path = self.processor.unpack_single(source_path)
+                self.info_display.setText(f'Successfully unpacked: {result_path}')
             except Exception as e:
-                self.status_label.setText(f'Error: {str(e)}')
+                self.info_display.setText(f'Error: {str(e)}')
                 
-    def compress_directory(self):
-        """Handle directory compression."""
-        dir_path = QFileDialog.getExistingDirectory(
+    def handle_folder(self):
+        """Process folder request."""
+        source_path = QFileDialog.getExistingDirectory(
             self,
-            "Select Directory to Compress"
+            "Choose Folder to Process"
         )
         
-        if dir_path:
+        if source_path:
             try:
-                compressed_files = self.compressor.compress_directory(dir_path)
-                self.status_label.setText(
-                    f'Successfully compressed {len(compressed_files)} files in directory'
+                processed_files = self.processor.pack_folder(source_path)
+                self.info_display.setText(
+                    f'Successfully processed {len(processed_files)} files in folder'
                 )
             except Exception as e:
-                self.status_label.setText(f'Error: {str(e)}') 
+                self.info_display.setText(f'Error: {str(e)}') 
